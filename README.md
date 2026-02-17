@@ -61,8 +61,8 @@ It reports both:
 
 ### 1) Clone and enter
 ```bash
-git clone <YOUR_REPO_URL>
-cd <YOUR_REPO_FOLDER>
+git clone https://github.com/Haldorsfjall/realtime-object-detection-benchmark.git>
+cd realtime-object-detection-benchmark
 ```
 
 ### 2) Create venv + install deps (CUDA PyTorch)
