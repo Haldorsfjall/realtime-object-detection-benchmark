@@ -18,7 +18,25 @@ say() { echo -e "\033[1;32m[download]\033[0m $*"; }
 
 need_cmd() { command -v "$1" >/dev/null 2>&1; }
 
+is_bad_zip() {
+  local file="$1"
+  local min_bytes="$2"
 
+  [[ -f "$file" ]] || return 0
+
+  local sz
+  sz=$(stat -c%s "$file" 2>/dev/null || echo 0)
+
+  if [[ "$sz" -lt "$min_bytes" ]]; then
+    return 0
+  fi
+
+  if ! unzip -tq "$file" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  return 1
+}
 
 verify_zip_size() {
   local file="$1"
@@ -45,16 +63,25 @@ verify_zip_integrity() {
     exit 2
   fi
 }
+
 download_file() {
   local url="$1"
   local out="$2"
+  local min_bytes="${3:-0}"
+
+  mkdir -p "$(dirname "$out")"
+
+  if [[ -f "$out" ]] && [[ "$min_bytes" -gt 0 ]]; then
+    if is_bad_zip "$out" "$min_bytes"; then
+      say "File looks broken, re-downloading: $out"
+      rm -f "$out"
+    fi
+  fi
 
   if [[ -f "$out" ]]; then
     say "Already exists: $out (skip)"
     return 0
   fi
-
-  mkdir -p "$(dirname "$out")"
 
   if need_cmd wget; then
     say "Downloading (wget): $url -> $out"
@@ -95,18 +122,17 @@ extract_zip() {
 main() {
   say "Destination directory: ${DATA_DIR}"
   mkdir -p "${DATA_DIR}"
-
   mkdir -p "${COCO_DIR}"
-  download_file "${VAL_URL}" "${VAL_ZIP}"
-  download_file "${ANN_URL}" "${ANN_ZIP}"
 
-  # Quick sanity checks (avoid the common "tiny html file saved as zip" problem)
+  download_file "${VAL_URL}" "${VAL_ZIP}" 500000000
+  download_file "${ANN_URL}" "${ANN_ZIP}" 100000000
+
   verify_zip_size "${VAL_ZIP}" 500000000
   verify_zip_size "${ANN_ZIP}" 100000000
   verify_zip_integrity "${VAL_ZIP}"
   verify_zip_integrity "${ANN_ZIP}"
 
-  if [[ ! -d "${COCO_IMG_DIR}" ]]; then
+  if [[ ! -f "${COCO_IMG_DIR}/000000000139.jpg" ]]; then
     extract_zip "${VAL_ZIP}" "${COCO_IMG_DIR}"
   else
     say "COCO images already present: ${COCO_IMG_DIR} (skip)"
@@ -127,3 +153,4 @@ main() {
 }
 
 main "$@"
+
