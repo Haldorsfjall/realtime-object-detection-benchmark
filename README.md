@@ -201,8 +201,8 @@ runs/                  # (gitignored) results and predictions
 
 ### 1) Клонировать и перейти в папку
 ```bash
-git clone <YOUR_REPO_URL>
-cd <YOUR_REPO_FOLDER>
+git clone https://github.com/Haldorsfjall/realtime-object-detection-benchmark.git
+cd realtime-object-detection-benchmark
 ```
 
 ### 2) Создать venv и установить зависимости (CUDA PyTorch)
